@@ -1,6 +1,7 @@
 const express = require('express');
 const { criaUsuario } = require('../../services');
 const logger = require('../../utils/logger');
+const passport = require('passport');
 
 const router = express.Router();
 
@@ -22,6 +23,13 @@ router.post('/', async(req, res) => {
             erro: e.message,
         });
     }
+});
+
+router.get('/me', passport.authenticate('jwt', { session: false}), (req, res) => {
+    res.json({
+        sucesso: true,
+        usuario: req.user,
+    })
 });
 
 module.exports = router;

@@ -2,12 +2,18 @@ require('dotenv').config()
 
 const createError = require('http-errors');
 const express = require('express');
+const passport = require('passport');
+
+require('./routes/v1/auth/jwt'); //teste
 
 const { logger } = require('./utils');
 const { connect } = require('./models');
 const router = require('./routes');
 
 const app = express();
+
+// configurando autenticacao
+app.use(passport.initialize());
 
 // configurando formatos de parâmetros
 app.use(express.json());
