@@ -23,6 +23,10 @@ const DepositoSchema = new Schema({
         type: Date,
         require: true,
     },
+    cancelado: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const UsuarioSchema = new Schema({

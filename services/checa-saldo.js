@@ -3,6 +3,20 @@ const { Usuario } = require('../models');
 const checaSaldo = async (usuario) => {
     const operacoes = (await Usuario.aggregate([
         { $match: { cpf: usuario.cpf} },
+        //atividade 
+        {
+            $project: {
+                depositos: {
+                    $filter: {
+                        input: '$depositos',
+                        as: 'deposito',
+                        cond: { $ne: ['$$deposito.cancelado', true] }
+                    }
+                },
+                saques: 1
+            }
+        },
+        //atividade
         {
             $unwind: {
                 path: "$depositos",
