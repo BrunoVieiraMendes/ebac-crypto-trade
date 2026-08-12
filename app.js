@@ -8,7 +8,11 @@ require('./routes/v1/auth/jwt'); //teste
 
 const { logger } = require('./utils');
 const { connect } = require('./models');
+const { agendaTarefas } = require('./workers');
 const router = require('./routes');
+
+// inicializa tarefas
+agendaTarefas();
 
 const app = express();
 
