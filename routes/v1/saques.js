@@ -23,6 +23,10 @@ router.post('/', async(req, res) => {
             throw new Error ('Voce nao possui saldo para sacar esse dinheiro');
         }
         usuario.saques.push({ valor: valor, data: new Date() });
+
+        const saldoEmMoedas = usuario.moedas.find(m => mcodigo === 'BRL');
+        saldoEmMoedas.quantidade -= valor;
+
         await usuario.save();
 
         res.json({
