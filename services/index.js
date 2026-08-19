@@ -4,6 +4,7 @@ module.exports = {
     criaUsuario: require('./cria-usuario'),
     logaUsuario: require('./loga-usuario'),
     checaSaldo: require('./checa-saldo'),
+    sacaCrypto: require('./saca-crypto'),
     buscaCotacoesOnline: require('./busca-cotacoes').buscaCotacoesOnline,
     buscaCotacoesNoBanco: require('./busca-cotacoes').buscaCotacoesNoBanco,
     buscaCotacoesPorData: require('./busca-cotacoes').buscaCotacoesPorData,
