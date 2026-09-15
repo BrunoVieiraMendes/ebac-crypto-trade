@@ -6,16 +6,29 @@ const { logger } = require('../../utils');
 const router = express.Router();
 
 /**
- * @openapi
- * /v1/cotacoes:
- *   get:
- *     description: Retorna a última cotação válida de cada moeda no nosso sistema
- *     responses:
- *       200:
- *         description: Recebe uma lista de cotações, atente-se ao id da cotação que será usado depois na troca de moedas
- *     tags:
- *       - operações
- */
+* @openapi
+* /v1/cotacoes:
+*   get:
+*     description: Retorna a última cotação válida de cada moeda no nosso sistema
+*     responses:
+*       200:
+*         description: Recebe uma lista de cotações, atente-se ao id da cotação que será usado depois na troca de moedas
+*          content:
+*             application/json:
+*               schema:
+*                 type: object
+*                 properties:
+*                   sucesso:
+*                     type: boolean
+*                     example: true
+*                   cotacoes:
+*                     type: array
+*                     items: 
+*                          $ref:'#/components/schemas/Cotação'
+*
+*     tags:
+*       - operações
+*/
 
 
 router.get('/', async(_req, res) => {
