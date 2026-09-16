@@ -45,10 +45,21 @@ router.post('/', async(req, res) => {
     } catch (e) {
         logger.error(`Erro na autenticacao: ${e.message}`);
 
-        res.status(401).json({
+        if (e.message.match('confirmado')) {
+            res.status(401).json({
+            sucesso: false,
+            erro: e.message
+            });
+
+
+        } else {
+            res.status(401).json({
             sucesso: false,
             erro: 'Email ou senha invalidos'
-        })
+            });
+        }
+            
+        
     }
 });
 

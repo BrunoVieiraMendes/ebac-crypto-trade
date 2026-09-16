@@ -7,9 +7,17 @@ const router = express.Router();
 
 router.post('/', async(req, res) => {
     const dados = req.body.usuario;
+    const urlDeRedirecionamento = req.body.redirect;
+
+    if (!urlDeRedirecionamento) {
+        return res.status(422).json({
+            sucesso: false,
+            erro: 'Deve passar um parametro redirect para onde o usuario sera redireciondo pos confirmacao'
+        });
+    }
 
     try {
-        const usuario = await criaUsuario(dados);
+        const usuario = await criaUsuario(dados, urlDeRedirecionamento);
 
         res.json({
             sucesso: true,
