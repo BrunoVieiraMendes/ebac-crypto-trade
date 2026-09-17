@@ -1,0 +1,3 @@
+Aioo <%= nome %>!!
+Seja muito bem vindo à CryptoTrade!
+Abra o seguinte link no navegador para confirmar a sua conta: <%- linkDeConfirmacao %>

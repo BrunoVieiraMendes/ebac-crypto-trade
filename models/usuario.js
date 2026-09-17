@@ -84,7 +84,7 @@ const UsuarioSchema = new Schema({
         type: String,
         unique: true,
         sparse: true,
-        select: false,
+        //select: false,
     },
     depositos: [DepositoSchema],
     saques: [SaqueSchema],

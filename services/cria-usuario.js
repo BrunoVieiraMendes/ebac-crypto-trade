@@ -2,9 +2,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
 const { Usuario } = require('../models');
-
-//TODO
-// const { enviaEmailDeConfimacao } = require('./envia-email');
+const { enviaEmailDeConfirmacao } = require('./envia-email');
 
 
 const criaUsuario = async(usuario, urlDeRedirecionamento) => {
@@ -20,12 +18,14 @@ const criaUsuario = async(usuario, urlDeRedirecionamento) => {
 
     usuario.senha = hashSenha;
 
-    usuario.tokenDeComfirmacao = crypto.randomBytes(32).toString('hex');
+    const tokenDeConfirmacao = crypto.randomBytes(32).toString('hex');
+    usuario.tokenDeConfirmacao = tokenDeConfirmacao;
 
     const { senha, ...usuarioSalvo } = (await Usuario.create(usuario))._doc;
 
-// TODO
-// await enviaEmailDeConfirmacao(usuarioSalvo, urlDeRedirecionamento);
+    usuarioSalvo.tokenDeConfirmacao = tokenDeConfirmacao;
+
+    await enviaEmailDeConfirmacao(usuarioSalvo, urlDeRedirecionamento);
 
     return usuarioSalvo;
 };
