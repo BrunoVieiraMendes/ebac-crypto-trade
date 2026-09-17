@@ -5,13 +5,17 @@ const confirmaConta = async (token) => {
         throw new Error('Token de confirmação não informado');
     }
 
-    const usuario = await Usuario.findOne({ tokenDeConfirmacao: token });
+    // tokenDeConfirmacao tem `select: false` no schema, entao precisa ser
+    // pedido explicitamente para podermos limpa-lo depois da confirmacao
+    const usuario = await Usuario
+        .findOne({ tokenDeConfirmacao: token })
+        .select('+tokenDeConfirmacao');
 
     if (!usuario) {
         throw new Error('Usuário não encontrado!');
     } else {
         usuario.confirmado = true;
-        usuario.tokenDeConfirmacao = undefined;
+        usuario.set('tokenDeConfirmacao', undefined);
 
         await usuario.save();
 

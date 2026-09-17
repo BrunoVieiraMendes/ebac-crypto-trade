@@ -1,5 +1,10 @@
+const path = require('path');
+
 const nodemailer = require('nodemailer');
 const ejs = require('ejs');
+
+// caminho absoluto dos templates, para nao depender de onde o node foi iniciado
+const templates = path.join(__dirname, '..', 'emails', 'confirmacao');
 
 
 const transporter = nodemailer.createTransport({
@@ -18,8 +23,8 @@ const enviaEmailDeConfirmacao = async (usuario, urlDeRedirecionamento) => {
         from: '"CryptoTrade" <noreply@cryptotrade.com.br>',
         to: usuario.email,
         subject: 'Confirme a sua conta!',
-        text: await ejs.renderFile('emails/confirmacao/template.txt', parametros),
-        html: await ejs.renderFile('emails/confirmacao/template.html', parametros),
+        text: await ejs.renderFile(path.join(templates, 'template.txt'), parametros),
+        html: await ejs.renderFile(path.join(templates, 'template.html'), parametros),
     });
 };
 

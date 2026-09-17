@@ -90,7 +90,7 @@ router.post('/', async(req, res) => {
  * /v1/usuarios/me:
  *   get:
  *     summary: Perfil do usuário
- *     description: Rota que retorna o perfil do usuário autenticado e o saldo total em BRL
+ *     description: Rota que retorna o perfil do usuário autenticado e o saldo total em BRL. A senha e o token de confirmação nunca são retornados
  *     security:
  *       - auth: []
  *     responses:

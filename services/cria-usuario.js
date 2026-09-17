@@ -21,11 +21,13 @@ const criaUsuario = async(usuario, urlDeRedirecionamento) => {
     const tokenDeConfirmacao = crypto.randomBytes(32).toString('hex');
     usuario.tokenDeConfirmacao = tokenDeConfirmacao;
 
-    const { senha, ...usuarioSalvo } = (await Usuario.create(usuario))._doc;
+    const { senha, tokenDeConfirmacao: _token, ...usuarioSalvo } = (await Usuario.create(usuario))._doc;
 
-    usuarioSalvo.tokenDeConfirmacao = tokenDeConfirmacao;
-
-    await enviaEmailDeConfirmacao(usuarioSalvo, urlDeRedirecionamento);
+    // o token vai apenas para o e-mail de confirmacao, nunca na resposta da API
+    await enviaEmailDeConfirmacao(
+        { ...usuarioSalvo, tokenDeConfirmacao },
+        urlDeRedirecionamento
+    );
 
     return usuarioSalvo;
 };

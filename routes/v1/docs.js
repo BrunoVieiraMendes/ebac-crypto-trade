@@ -131,11 +131,6 @@ const schemas = {
                 description: 'Indica se o usuário já confirmou a conta pelo e-mail',
                 example: true,
             },
-            tokenDeConfirmacao: {
-                type: 'string',
-                description: 'Token enviado por e-mail. Deixa de existir após a confirmação',
-                example: '9f1c2e7a4b...',
-            },
             depositos: {
                 type: 'array',
                 items: {
