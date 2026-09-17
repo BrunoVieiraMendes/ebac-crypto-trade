@@ -8,24 +8,39 @@ const router = express.Router();
  * @openapi
  * /v1/auth:
  *   post:
- *     description: Rota que autentica o usuário e retorna um JWT
+ *     summary: Login
+ *     description: Rota que autentica o usuário e retorna um JWT. O usuário precisa ter confirmado a conta pelo e-mail.
  *     requestBody:
  *       description: Suas informações de login
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *               senha:
- *                 type: string
+ *             $ref: '#/components/schemas/LoginRequest'
  *     responses:
  *       200:
  *         description: Request realizado com sucesso e JWT obtido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
  *       401:
- *         description: Email ou senha inválidos
+ *         description: Email ou senha inválidos, ou conta ainda não confirmada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Erro'
+ *             examples:
+ *               credenciaisInvalidas:
+ *                 summary: Email ou senha inválidos
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Email ou senha invalidos
+ *               contaNaoConfirmada:
+ *                 summary: Conta ainda não confirmada
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Usuario nao confirmado! Cheque seu email para logar
  *     tags:
  *       - autenticação
  */
@@ -62,6 +77,56 @@ router.post('/', async(req, res) => {
     }
 });
 
+/**
+ * @openapi
+ * /v1/auth/confirma-conta:
+ *   get:
+ *     summary: Confirma a conta do usuário
+ *     description: Link enviado por e-mail após o cadastro. Confirma a conta a partir do token e redireciona o usuário para a URL informada no cadastro.
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Token de confirmação enviado por e-mail
+ *         example: 9f1c2e7a4b8d0e6f3a2b1c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f
+ *       - in: query
+ *         name: redirect
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: uri
+ *         description: URL de redirecionamento após a confirmação (padrão https://www.google.com.br)
+ *         example: https://www.meusite.com.br/bem-vindo
+ *     responses:
+ *       302:
+ *         description: Conta confirmada. O usuário é redirecionado para a URL informada
+ *         headers:
+ *           Location:
+ *             description: URL de redirecionamento
+ *             schema:
+ *               type: string
+ *       422:
+ *         description: Token não informado ou inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Erro'
+ *             examples:
+ *               tokenNaoInformado:
+ *                 summary: Token não informado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Token de confirmação não informado
+ *               usuarioNaoEncontrado:
+ *                 summary: Token inválido ou já utilizado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Usuário não encontrado!
+ *     tags:
+ *       - autenticação
+ */
 
 router.get('/confirma-conta', async (req, res) => {
     try {

@@ -10,6 +10,7 @@ const router = express.Router();
  * @openapi
  * /v1/depositos:
  *   get:
+ *     summary: Lista os depósitos do usuário
  *     description: Retorna o histórico de depósitos realizados pelo usuário autenticado
  *     security:
  *       - auth: []
@@ -19,26 +20,9 @@ const router = express.Router();
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 sucesso:
- *                   type: boolean
- *                   example: true
- *                 depositos:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       valor:
- *                         type: number
- *                         example: 250.00
- *                       data:
- *                         type: string
- *                         format: date-time
- *                         example: '2026-09-15T03:40:00.000Z'
- *                       cancelado:
- *                         type: boolean
- *                         example: false
+ *               $ref: '#/components/schemas/ListaDepositosResponse'
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
  *     tags:
  *       - operações
  */
@@ -56,6 +40,7 @@ router.get('/', (req, res) => {
  * @openapi
  * /v1/depositos:
  *   post:
+ *     summary: Realiza um depósito em BRL
  *     description: Realiza a solicitação de um novo depósito em BRL adicionando ao saldo do usuário
  *     security:
  *       - auth: []
@@ -65,56 +50,33 @@ router.get('/', (req, res) => {
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - valor
- *             properties:
- *               valor:
- *                 type: number
- *                 description: Quantia em dinheiro a ser depositada
- *                 example: 500.00
+ *             $ref: '#/components/schemas/DepositoRequest'
  *     responses:
  *       200:
  *         description: Depósito efetuado com sucesso e saldo atualizado
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 sucesso:
- *                   type: boolean
- *                   example: true
- *                 saldo:
- *                   type: number
- *                   example: 1750.50
- *                 depositos:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       valor:
- *                         type: number
- *                         example: 500.00
- *                       data:
- *                         type: string
- *                         format: date-time
- *                         example: '2026-09-15T03:41:00.000Z'
- *                       cancelado:
- *                         type: boolean
- *                         example: false
+ *               $ref: '#/components/schemas/DepositoResponse'
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
  *       422:
- *         description: Erro interno ou falha no processamento do depósito
+ *         description: Falha na validação ou no processamento do depósito
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 sucesso:
- *                   type: boolean
- *                   example: false
- *                 erro:
- *                   type: string
- *                   example: Erro ao salvar informações do depósito
+ *               $ref: '#/components/schemas/Erro'
+ *             examples:
+ *               valorAbaixoDoMinimo:
+ *                 summary: Valor abaixo do mínimo (100)
+ *                 value:
+ *                   sucesso: false
+ *                   erro: 'Usuario validation failed: depositos.0.valor: Path `valor` (50) is less than minimum allowed value (100).'
+ *               valorNaoInformado:
+ *                 summary: Campo valor não enviado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: 'Usuario validation failed: depositos.0.valor: Path `valor` is required.'
  *     tags:
  *       - operações
  */
@@ -159,6 +121,7 @@ router.post('/', async(req, res) => {
  * @openapi
  * /v1/depositos/{id}/cancelar:
  *   patch:
+ *     summary: Cancela um depósito
  *     description: Cancela um depósito específico que ainda não tenha sido cancelado
  *     security:
  *       - auth: []
@@ -168,63 +131,35 @@ router.post('/', async(req, res) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: ID identificador do depósito do banco de dados (ObjectId)
- *         example: '6342f000a1e60a140b49e5a3'
+ *         description: ID do depósito (campo _id retornado na listagem de depósitos)
+ *         example: '6342f2c3a1e60a140b49e5c9'
  *     responses:
  *       200:
  *         description: Depósito cancelado com sucesso e saldo recalculado
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 sucesso:
- *                   type: boolean
- *                   example: true
- *                 saldo:
- *                   type: number
- *                   example: 1250.50
- *                 depositos:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       valor:
- *                         type: number
- *                         example: 500.00
- *                       data:
- *                         type: string
- *                         format: date-time
- *                         example: '2026-09-15T03:41:00.000Z'
- *                       cancelado:
- *                         type: boolean
- *                         example: true
+ *               $ref: '#/components/schemas/DepositoResponse'
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
  *       404:
  *         description: Depósito informado não foi localizado na conta do usuário
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 sucesso:
- *                   type: boolean
- *                   example: false
- *                 erro:
- *                   type: string
- *                   example: Deposito nao encontrado
+ *               $ref: '#/components/schemas/Erro'
+ *             example:
+ *               sucesso: false
+ *               erro: Deposito nao encontrado
  *       422:
- *         description: Falha na validação de negócio (ex. Depósito já cancelado anteriormente)
+ *         description: Falha na regra de negócio (ex. depósito já cancelado anteriormente)
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 sucesso:
- *                   type: boolean
- *                   example: false
- *                 erro:
- *                   type: string
- *                   example: Deposito ja cancelado
+ *               $ref: '#/components/schemas/Erro'
+ *             example:
+ *               sucesso: false
+ *               erro: Deposito ja cancelado
  *     tags:
  *       - operações
  */

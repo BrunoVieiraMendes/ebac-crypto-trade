@@ -10,7 +10,8 @@ const router = express.Router();
  * @openapi
  * /v1/trocas:
  *   post:
- *     description: Realiza a troca (compra ou venda) de uma criptomoeda com base em uma cotação ativa
+ *     summary: Troca (compra ou venda) de cryptomoeda
+ *     description: Realiza a compra ou venda de uma cryptomoeda com base em uma cotação válida (obtida há no máximo 15 minutos em GET /v1/cotacoes). É cobrada uma taxa de 5% sobre a quantidade operada.
  *     security:
  *       - auth: []
  *     requestBody:
@@ -19,61 +20,58 @@ const router = express.Router();
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - cotacaoId
- *               - quantidade
- *               - operacao
- *             properties:
- *               cotacaoId:
- *                 type: string
- *                 description: ID único da cotação obtida previamente no sistema
- *                 example: '6342f000a1e60a140b49e5a3'
- *               quantidade:
- *                 type: number
- *                 description: Quantidade da moeda que se deseja operar
- *                 example: 0.5
- *               operacao:
- *                 type: string
- *                 enum: [COMPRA, VENDA]
- *                 description: Tipo da operação financeira a ser executada
- *                 example: 'COMPRA'
+ *             $ref: '#/components/schemas/TrocaRequest'
  *     responses:
  *       200:
  *         description: Troca realizada com sucesso. Retorna a carteira atualizada do usuário
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 sucesso:
- *                   type: boolean
- *                   example: true
- *                 moedas:
- *                   type: array
- *                   description: Lista com os saldos atualizados de todas as moedas do usuário
- *                   items:
- *                     type: object
- *                     properties:
- *                       codigo:
- *                         type: string
- *                         example: 'SOL'
- *                       quantidade:
- *                         type: number
- *                         example: 2.35
+ *               $ref: '#/components/schemas/CarteiraResponse'
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
  *       422:
- *         description: Falha na regra de negócio (ex. Cotação expirada, saldo insuficiente ou operação inválida)
+ *         description: Falha na regra de negócio (cotação expirada, saldo insuficiente, falta de caixa da corretora ou dados faltando)
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 sucesso:
- *                   type: boolean
- *                   example: false
- *                 erro:
- *                   type: string
- *                   example: Saldo insuficiente para realizar a compra
+ *               $ref: '#/components/schemas/Erro'
+ *             examples:
+ *               dadosFaltando:
+ *                 summary: Quantidade ou operação não informadas
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Voce deve informar a quantidade desejada e a operacao (compra ou venda) desejada
+ *               operacaoInvalida:
+ *                 summary: Operação diferente de compra ou venda
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Operacao invalida! Use compra ou venda
+ *               quantidadeInvalida:
+ *                 summary: Quantidade zero, negativa ou não numérica
+ *                 value:
+ *                   sucesso: false
+ *                   erro: A quantidade deve ser um numero maior que zero
+ *               cotacaoInvalida:
+ *                 summary: Cotação inexistente ou expirada
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Cotacao invalida ou expirada!
+ *               semCaixa:
+ *                 summary: Corretora sem caixa para a operação
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Valor muito grande, nao temos caixa no momento para essa operacao
+ *               saldoInsuficienteCompra:
+ *                 summary: Saldo em BRL insuficiente para comprar
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Voce nao possui saldo o suficiente para essa operacao! deposite mais dinheiro
+ *               saldoInsuficienteVenda:
+ *                 summary: Saldo em crypto insuficiente para vender
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Voce nao possui saldo o suficiente para essa operacao! Compre mais cryptos!
  *     tags:
  *       - operações
  */

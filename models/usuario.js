@@ -9,8 +9,6 @@ const MoedasSchema = new Schema({
     codigo: {
         type: String,
         required: true,
-        unique: true,
-        sparse: true,
     }
 })
 

@@ -9,6 +9,7 @@ const router = express.Router();
  * @openapi
  * /v1/cotacoes:
  *   get:
+ *     summary: Lista as cotações atuais
  *     description: Retorna a última cotação válida de cada moeda no nosso sistema
  *     responses:
  *       200:
@@ -16,17 +17,11 @@ const router = express.Router();
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 sucesso:
- *                   type: boolean
- *                   example: true
- *                 cotacoes:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Cotacao'
+ *               $ref: '#/components/schemas/CotacoesResponse'
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
  *     tags:
- *       - operacoes
+ *       - operações
  */
 
 

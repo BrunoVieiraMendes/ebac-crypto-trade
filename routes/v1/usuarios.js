@@ -5,6 +5,57 @@ const passport = require('passport');
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * /v1/usuarios:
+ *   post:
+ *     summary: Cadastra um novo usuário
+ *     description: Cria o usuário e envia um e-mail com o link de confirmação da conta. O login só é permitido após a confirmação.
+ *     requestBody:
+ *       description: Dados do usuário e URL de redirecionamento pós confirmação
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CriaUsuarioRequest'
+ *     responses:
+ *       200:
+ *         description: Usuário criado com sucesso e e-mail de confirmação enviado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CriaUsuarioResponse'
+ *       422:
+ *         description: Dados inválidos ou faltando
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Erro'
+ *             examples:
+ *               redirectFaltando:
+ *                 summary: Parâmetro redirect não informado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Deve passar um parametro redirect para onde o usuario sera redireciondo pos confirmacao
+ *               senhaFaltando:
+ *                 summary: Senha não informada
+ *                 value:
+ *                   sucesso: false
+ *                   erro: O campo senha e obrigatorio
+ *               senhaCurta:
+ *                 summary: Senha com menos de 5 caracteres
+ *                 value:
+ *                   sucesso: false
+ *                   erro: O campo senha de ter no minimo 5 caracteres
+ *               cpfInvalido:
+ *                 summary: CPF inválido
+ *                 value:
+ *                   sucesso: false
+ *                   erro: 'Usuario validation failed: cpf: 123.456.789-00 nao e um CPF valido '
+ *     tags:
+ *       - usuário
+ */
+
 router.post('/', async(req, res) => {
     const dados = req.body.usuario;
     const urlDeRedirecionamento = req.body.redirect;
@@ -38,14 +89,19 @@ router.post('/', async(req, res) => {
  * @openapi
  * /v1/usuarios/me:
  *   get:
- *     description: Rota que retorna o perfil do usuário
+ *     summary: Perfil do usuário
+ *     description: Rota que retorna o perfil do usuário autenticado e o saldo total em BRL
  *     security:
  *       - auth: []
  *     responses:
  *       200:
  *         description: Informações do perfil do usuário
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PerfilResponse'
  *       401:
- *         description: Autorização está faltando ou inválida
+ *         $ref: '#/components/responses/NaoAutorizado'
  *     tags:
  *       - usuário
  */
