@@ -1,0 +1,5 @@
+Olá <%= nome %>!!
+Recebemos um pedido seu de recuperação de senha!
+Abra o seguinte link no navegador para redefinir sua senha: <%= linkDeRecuperacao %>
+
+Caso não tenha sido você que tenha pedido esse email, basta ignorá-lo
