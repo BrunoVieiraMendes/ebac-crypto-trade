@@ -1,5 +1,5 @@
 const express = require('express');
-const { criaUsuario, checaSaldo } = require('../../services');
+const { criaUsuario, checaSaldo, geraSegredo } = require('../../services');
 const { Usuario } = require('../../models');
 const logger = require('../../utils/logger');
 const passport = require('passport');
@@ -184,6 +184,32 @@ router.put('/senha',
         });
     }
 });
+
+
+router.post('/otp',
+    passport.authenticate('jwt', { session: false }),
+    async (req, res) => {
+        const usuario = req.user;
+
+        try {
+            const { segredo, qrcode } = geraSegredo(usuario.email);
+
+            usuario.segredoOtp = segredo;
+            await usuario.save();
+
+            return res.send(qrcode);
+        } catch (e) {
+            logger.error(`Erro na geração do segredo do TOTP ${e.message}`);
+
+            return res.status(500).json({
+                sucesso: false,
+                erro: e.message,
+            });
+        }
+    }
+);
+
+
 
 
 /**

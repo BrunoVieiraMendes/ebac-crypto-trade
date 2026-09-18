@@ -24,8 +24,10 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^6.5.3",
     "nodemailer": "^10.0.10",
+    "otplib": "^13.5.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "qr-image": "^3.2.0",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.8.1"

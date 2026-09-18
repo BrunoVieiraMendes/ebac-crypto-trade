@@ -11,6 +11,8 @@ module.exports = {
     trocaMoedas: require('./troca-moedas'),
     confirmaConta: require('./confirma-conta'),
     validaTokenAlteracaoDeSenha: require('./valida-token-senha'),
+    geraSegredo: require('./otp').geraSegredo,
+    validaOtp: require('./otp').validaOtp,
     analisaLucroEmTrade: require('./analisa-lucro'),
     buscaCotacoesOnline: require('./busca-cotacoes').buscaCotacoesOnline,
     buscaCotacoesNoBanco: require('./busca-cotacoes').buscaCotacoesNoBanco,
