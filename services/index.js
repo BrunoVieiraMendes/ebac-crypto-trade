@@ -11,9 +11,11 @@ module.exports = {
     trocaMoedas: require('./troca-moedas'),
     confirmaConta: require('./confirma-conta'),
     validaTokenAlteracaoDeSenha: require('./valida-token-senha'),
+    analisaLucroEmTrade: require('./analisa-lucro'),
     buscaCotacoesOnline: require('./busca-cotacoes').buscaCotacoesOnline,
     buscaCotacoesNoBanco: require('./busca-cotacoes').buscaCotacoesNoBanco,
     buscaCotacoesPorData: require('./busca-cotacoes').buscaCotacoesPorData,
     enviaEmailDeConfirmacao: require('./envia-email').enviaEmailDeConfirmacao,
-    enviaEmailDeRecuperacao: require('./envia-email').enviaEmailDeRecuperacao, 
+    enviaEmailDeRecuperacao: require('./envia-email').enviaEmailDeRecuperacao,
+    enviaEmailDeParabenizacao: require('./envia-email').enviaEmailDeParabenizacao,
 };

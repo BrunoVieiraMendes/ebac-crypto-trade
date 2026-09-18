@@ -4,16 +4,19 @@ const cotacoesWorker = require('./cotacoes');
 const fechamentoWorker = require('./fechamento')
 const saldoWorker = require('./saldo')
 const relatoriosWorker = require('./relatorios');
+const parabenizacaoWorker = require('./parabenizacao');
 
 const cotacoesQueue = new Queue('busca-cotacoes', process.env.REDIS_URL);
 const fechamentoQueue = new Queue('analise-diaria', process.env.REDIS_URL);
 const aumentaSaldoQueue = new Queue('aumenta-saldo', process.env.REDIS_URL);
 const relatoriosQueue = new Queue('relatorios', process.env.REDIS_URL);
+const parabenizacaoQueue = new Queue('parabenizacao', process.env.REDIS_URL);
 
 cotacoesQueue.process(cotacoesWorker);
 fechamentoQueue.process(fechamentoWorker);
 aumentaSaldoQueue.process(saldoWorker);
 relatoriosQueue.process(relatoriosWorker);
+parabenizacaoQueue.process(parabenizacaoWorker);
 
 const agendaTarefas = async () => {
     const cotacoesAgendadas = await cotacoesQueue.getRepeatableJobs();
@@ -52,6 +55,21 @@ const agendaTarefas = async () => {
     relatoriosQueue.add({},
         {
             repeat: { cron: '0 0 * * *' },
+            attempts: 3,
+            backoff: 5000,
+        }
+    );
+
+    // limpa agendamentos antigos para nao duplicar o envio de e-mails
+    const parabenizacoesAgendadas = await parabenizacaoQueue.getRepeatableJobs();
+    for (const jobDeParabenizacao of parabenizacoesAgendadas) {
+        await parabenizacaoQueue.removeRepeatableByKey(jobDeParabenizacao.key);
+    }
+
+    // todo dia as 8h da manha
+    parabenizacaoQueue.add({},
+        {
+            repeat: { cron: '0 8 * * *' },
             attempts: 3,
             backoff: 5000,
         }

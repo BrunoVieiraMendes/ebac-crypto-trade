@@ -1,0 +1,6 @@
+Parabens <%= nome %>!!
+Ontem voce lucrou <%= lucro %> operando na CryptoTrade!
+Continue acompanhando as cotacoes para aproveitar as proximas oportunidades: <%- linkDaCryptoTrade %>
+
+Bons trades!
+Equipe CryptoTrade

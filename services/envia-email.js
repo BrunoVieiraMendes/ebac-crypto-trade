@@ -12,6 +12,7 @@ const { ehUrlDeRedirecionamentoValida } = require('../utils');
 // caminhos absolutos dos templates, para nao depender de onde o node foi iniciado
 const templatesDeConfirmacao = path.join(__dirname, '..', 'emails', 'confirmacao');
 const templatesDeRecuperacao = path.join(__dirname, '..', 'emails', 'recuperacao-de-senha');
+const templatesDeParabenizacao = path.join(__dirname, '..', 'emails', 'parabenizacao');
 
 
 const transporter = nodemailer.createTransport({
@@ -87,7 +88,25 @@ const enviaEmailDeRecuperacao = async (email, urlDeRedirecionamento) => {
 };
 
 
+const enviaEmailDeParabenizacao = async (usuario, lucro) => {
+    const parametros = {
+        nome: usuario.nome,
+        lucro: lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+        linkDaCryptoTrade: `${process.env.URL_DA_CRYPTOTRADE}/v1/cotacoes`,
+    };
+
+    await transporter.sendMail({
+        from: '"CryptoTrade" <noreply@cryptotrade.com.br>',
+        to: usuario.email,
+        subject: 'Parabens pelos seus trades de ontem!',
+        text: await ejs.renderFile(path.join(templatesDeParabenizacao, 'template.txt'), parametros),
+        html: await ejs.renderFile(path.join(templatesDeParabenizacao, 'template.html'), parametros),
+    });
+};
+
+
 module.exports = {
     enviaEmailDeConfirmacao,
     enviaEmailDeRecuperacao,
+    enviaEmailDeParabenizacao,
 };
