@@ -1,5 +1,5 @@
 const express = require('express');
-const { logger } = require('../../utils');
+const { logger, ehUrlDeRedirecionamentoValida } = require('../../utils');
 const { logaUsuario, confirmaConta, enviaEmailDeRecuperacao, validaTokenAlteracaoDeSenha } = require('../../services');
 
 const router = express.Router();
@@ -134,9 +134,9 @@ router.get('/confirma-conta', async (req, res) => {
 
         await confirmaConta(token);
 
-        // Se 'redirect' for nulo, vazio ou a string literal "undefined", usa um fallback seguro
-        const urlFinal = (redirect && redirect !== 'undefined' && redirect !== '') 
-            ? redirect 
+        // se o redirect nao for uma URL absoluta valida, usa um fallback seguro
+        const urlFinal = ehUrlDeRedirecionamentoValida(redirect)
+            ? redirect
             : 'https://www.google.com.br';
 
         return res.redirect(urlFinal);
@@ -150,6 +150,68 @@ router.get('/confirma-conta', async (req, res) => {
     }
 });
 
+
+/**
+ * @openapi
+ * /v1/auth/pede-recuperacao:
+ *   get:
+ *     summary: Pede a recuperação de senha
+ *     description: >
+ *       Gera um token de recuperação e envia por e-mail um link válido por 5 minutos.
+ *       A resposta é sempre a mesma, exista ou não um cadastro com aquele e-mail,
+ *       para não revelar quem tem conta na corretora. Cada novo pedido invalida o link anterior.
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *         description: E-mail cadastrado que receberá o link de recuperação
+ *         example: bruno@email.com
+ *       - in: query
+ *         name: redirect
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uri
+ *         description: URL da sua tela de troca de senha, para onde o usuário será levado após clicar no link
+ *         example: https://www.meusite.com.br/nova-senha
+ *     responses:
+ *       200:
+ *         description: Pedido recebido (a mensagem é a mesma mesmo se o e-mail não existir)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MensagemResponse'
+ *             example:
+ *               sucesso: true
+ *               mensagem: Se você possui um cadastro você receberá o email
+ *       422:
+ *         description: Parâmetros obrigatórios não informados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Erro'
+ *             examples:
+ *               emailFaltando:
+ *                 summary: E-mail não informado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Deve ser enviado um parâmetro com o email que deseja pedir a recuperação
+ *               redirectFaltando:
+ *                 summary: Redirect não informado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Deve ser enviado um parâmetro com a URL de redirecionamento
+ *               redirectRelativo:
+ *                 summary: Redirect sem http:// ou https://
+ *                 value:
+ *                   sucesso: false
+ *                   erro: 'A URL de redirecionamento deve comecar com http:// ou https://'
+ *     tags:
+ *       - autenticação
+ */
 
 router.get('/pede-recuperacao', async (req, res) => {
     try {
@@ -172,13 +234,73 @@ router.get('/pede-recuperacao', async (req, res) => {
 });
 
 
+/**
+ * @openapi
+ * /v1/auth/valida-token:
+ *   get:
+ *     summary: Valida o token de recuperação de senha
+ *     description: >
+ *       Link enviado no e-mail de recuperação. Valida o token e redireciona para a URL
+ *       informada no pedido, acrescentando um JWT de 15 minutos na query string
+ *       (`?jwt=...`). Esse JWT deve ser usado em PUT /v1/usuarios/senha para gravar a nova senha.
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Token recebido por e-mail (JWT válido por 5 minutos)
+ *         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbiI6ImZlYzBmMDkifQ.abc123
+ *       - in: query
+ *         name: redirect
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uri
+ *         description: URL da tela de troca de senha, que receberá o JWT na query string
+ *         example: https://www.meusite.com.br/nova-senha
+ *     responses:
+ *       302:
+ *         description: Token válido. Redireciona para `redirect?jwt=<token>`
+ *         headers:
+ *           Location:
+ *             description: URL de redirecionamento já com o JWT
+ *             schema:
+ *               type: string
+ *               example: https://www.meusite.com.br/nova-senha?jwt=eyJhbGciOiJIUzI1NiJ9...
+ *       422:
+ *         description: Token inválido, já utilizado ou expirado, ou redirect inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Erro'
+ *             examples:
+ *               tokenInvalido:
+ *                 summary: Token inválido ou expirado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Token não encontrado ou expirado. Requisite um novo!
+ *               redirectRelativo:
+ *                 summary: Redirect sem http:// ou https://
+ *                 value:
+ *                   sucesso: false
+ *                   erro: 'A URL de redirecionamento deve comecar com http:// ou https://'
+ *     tags:
+ *       - autenticação
+ */
+
 router.get('/valida-token', async (req, res) => {
     try {
         const { token, redirect } = req.query;
 
+        if (!ehUrlDeRedirecionamentoValida(redirect)) {
+            throw new Error('A URL de redirecionamento deve comecar com http:// ou https://');
+        }
+
         const jwt = await validaTokenAlteracaoDeSenha(token);
 
-        res.redirect(`${redirect}?jwt=${jwt}`);
+        const separador = redirect.includes('?') ? '&' : '?';
+        res.redirect(`${redirect}${separador}jwt=${jwt}`);
     } catch (e) {
         logger.error(`Erro na validação do token de recuperação de senha: ${e.message}`);
 

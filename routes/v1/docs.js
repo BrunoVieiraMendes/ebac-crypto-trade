@@ -247,6 +247,19 @@ const schemas = {
             },
         },
     },
+    AlteraSenhaRequest: {
+        type: 'object',
+        required: ['senha'],
+        properties: {
+            senha: {
+                type: 'string',
+                format: 'password',
+                minLength: 5,
+                description: 'Nova senha do usuário (mínimo 5 caracteres)',
+                example: 'minhaNovaSenha123',
+            },
+        },
+    },
     DepositoRequest: {
         type: 'object',
         required: ['valor'],
@@ -308,6 +321,20 @@ const schemas = {
     },
 
     // ------------------------------- Respostas -------------------------------
+    MensagemResponse: {
+        type: 'object',
+        description: 'Retorno simples de sucesso com uma mensagem',
+        properties: {
+            sucesso: {
+                type: 'boolean',
+                example: true,
+            },
+            mensagem: {
+                type: 'string',
+                example: 'Senha alterada com sucesso',
+            },
+        },
+    },
     StatusResponse: {
         type: 'object',
         properties: {

@@ -1,5 +1,6 @@
 const express = require('express');
 const { criaUsuario, checaSaldo } = require('../../services');
+const { Usuario } = require('../../models');
 const logger = require('../../utils/logger');
 const passport = require('passport');
 const bcrypt = require('bcrypt');
@@ -39,6 +40,11 @@ const router = express.Router();
  *                 value:
  *                   sucesso: false
  *                   erro: Deve passar um parametro redirect para onde o usuario sera redireciondo pos confirmacao
+ *               redirectRelativo:
+ *                 summary: Redirect sem http:// ou https://
+ *                 value:
+ *                   sucesso: false
+ *                   erro: 'A URL de redirecionamento deve comecar com http:// ou https://'
  *               senhaFaltando:
  *                 summary: Senha não informada
  *                 value:
@@ -87,27 +93,97 @@ router.post('/', async(req, res) => {
 });
 
 
+/**
+ * @openapi
+ * /v1/usuarios/senha:
+ *   put:
+ *     summary: Altera a senha do usuário
+ *     description: >
+ *       Troca a senha do usuário autenticado. Serve tanto para quem já está logado
+ *       quanto para o fim do fluxo de recuperação, usando o JWT devolvido por
+ *       GET /v1/auth/valida-token. Ao trocar a senha, o token de recuperação é
+ *       invalidado, então o link recebido por e-mail deixa de funcionar.
+ *     security:
+ *       - auth: []
+ *     requestBody:
+ *       description: Nova senha do usuário
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AlteraSenhaRequest'
+ *     responses:
+ *       200:
+ *         description: Senha alterada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MensagemResponse'
+ *             example:
+ *               sucesso: true
+ *               mensagem: Senha alterada com sucesso
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       422:
+ *         description: Senha inválida ou não informada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Erro'
+ *             examples:
+ *               senhaFaltando:
+ *                 summary: Senha não informada
+ *                 value:
+ *                   sucesso: false
+ *                   erro: O campo senha e obrigatorio
+ *               senhaCurta:
+ *                 summary: Senha com menos de 5 caracteres
+ *                 value:
+ *                   sucesso: false
+ *                   erro: O campo senha de ter no minimo 5 caracteres
+ *     tags:
+ *       - usuário
+ */
+
 router.put('/senha',
     passport.authenticate('jwt', { session: false}),
     async(req, res) => {
     const { senha } = req.body;
 
     try {
-        const usuario = req.user;
-        usuario.senha = await bcrypt.hash(senha, 10);
-        await usuario.save();
+        if (!senha) {
+            throw new Error('O campo senha e obrigatorio');
+        }
+
+        if (senha.length <= 4) {
+            throw new Error('O campo senha de ter no minimo 5 caracteres');
+        }
+
+        const senhaCriptografada = await bcrypt.hash(senha, 10);
+
+        // troca a senha e invalida o token de recuperacao (remove o campo, porque
+        // o indice e unique + sparse e nao aceita varios documentos com null)
+        await Usuario.updateOne(
+            { _id: req.user._id },
+            {
+                $set: { senha: senhaCriptografada },
+                $unset: { tokenDeRecuperacao: 1 },
+            },
+        );
 
         res.json({
             sucesso: true,
-            mensagem: 'Senha alterada com sucesso';
+            mensagem: 'Senha alterada com sucesso',
         });
     } catch (e) {
+        logger.error(`Erro na alteracao de senha: ${e.message}`);
+
         res.status(422).json({
             sucesso: false,
             erro: e.message,
-        })
+        });
     }
-
+});
 
 
 /**
