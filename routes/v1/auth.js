@@ -9,7 +9,10 @@ const router = express.Router();
  * /v1/auth:
  *   post:
  *     summary: Login
- *     description: Rota que autentica o usuário e retorna um JWT. O usuário precisa ter confirmado a conta pelo e-mail.
+ *     description: >
+ *       Rota que autentica o usuário e retorna um JWT. O usuário precisa ter confirmado a conta
+ *       pelo e-mail. Quem tiver o 2FA ativo também precisa enviar o campo `otp` com o código
+ *       do aplicativo autenticador.
  *     requestBody:
  *       description: Suas informações de login
  *       required: true
@@ -41,6 +44,16 @@ const router = express.Router();
  *                 value:
  *                   sucesso: false
  *                   erro: Usuario nao confirmado! Cheque seu email para logar
+ *               otpFaltando:
+ *                 summary: 2FA ativo e código não informado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Informe o codigo OTP do seu aplicativo autenticador
+ *               otpInvalido:
+ *                 summary: Código do autenticador errado ou expirado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Codigo OTP invalido
  *     tags:
  *       - autenticação
  */
@@ -48,9 +61,9 @@ const router = express.Router();
 
 router.post('/', async(req, res) => {
     try {
-        const { email, senha } = req.body;
+        const { email, senha, otp } = req.body;
 
-        const jwt = await logaUsuario(email, senha);
+        const jwt = await logaUsuario(email, senha, otp);
 
         res.status(200).json({
             sucesso: true,
@@ -59,7 +72,7 @@ router.post('/', async(req, res) => {
     } catch (e) {
         logger.error(`Erro na autenticacao: ${e.message}`);
 
-        if (e.message.match('confirmado')) {
+        if (e.message.match('confirmado') || e.message.match('OTP')) {
             res.status(401).json({
             sucesso: false,
             erro: e.message

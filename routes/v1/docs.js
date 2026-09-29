@@ -131,6 +131,11 @@ const schemas = {
                 description: 'Indica se o usuário já confirmou a conta pelo e-mail',
                 example: true,
             },
+            otpAtivo: {
+                type: 'boolean',
+                description: 'Indica se o usuário ativou o segundo fator (2FA)',
+                example: false,
+            },
             depositos: {
                 type: 'array',
                 items: {
@@ -189,6 +194,17 @@ const schemas = {
     },
 
     // ------------------------------ Requisições ------------------------------
+    OtpRequest: {
+        type: 'object',
+        required: ['token'],
+        properties: {
+            token: {
+                type: 'string',
+                description: 'Código de 6 dígitos gerado pelo aplicativo autenticador',
+                example: '123456',
+            },
+        },
+    },
     LoginRequest: {
         type: 'object',
         required: ['email', 'senha'],
@@ -202,6 +218,11 @@ const schemas = {
                 type: 'string',
                 format: 'password',
                 example: 'minhaSenha123',
+            },
+            otp: {
+                type: 'string',
+                description: 'Código do aplicativo autenticador. Obrigatório apenas para quem ativou o 2FA',
+                example: '123456',
             },
         },
     },

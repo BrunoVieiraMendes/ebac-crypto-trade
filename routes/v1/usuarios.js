@@ -1,5 +1,5 @@
 const express = require('express');
-const { criaUsuario, checaSaldo, geraSegredo } = require('../../services');
+const { criaUsuario, checaSaldo, geraSegredo, validaOtp } = require('../../services');
 const { Usuario } = require('../../models');
 const logger = require('../../utils/logger');
 const passport = require('passport');
@@ -186,22 +186,246 @@ router.put('/senha',
 });
 
 
+/**
+ * @openapi
+ * /v1/usuarios/otp:
+ *   post:
+ *     summary: Gera o QR Code do 2FA
+ *     description: >
+ *       Gera um segredo TOTP para o usuário autenticado e devolve o QR Code (SVG) para ser
+ *       lido no Google Authenticator, Authy ou similar. O 2FA só passa a valer depois de
+ *       confirmar um código em POST /v1/usuarios/otp/valida. Se o 2FA já estiver ativo,
+ *       é preciso desativar antes, para não invalidar o aplicativo já configurado.
+ *     security:
+ *       - auth: []
+ *     responses:
+ *       200:
+ *         description: QR Code gerado (imagem SVG)
+ *         content:
+ *           image/svg+xml:
+ *             schema:
+ *               type: string
+ *               example: '<svg xmlns="http://www.w3.org/2000/svg" ...></svg>'
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       422:
+ *         description: O usuário já tem o 2FA ativo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Erro'
+ *             example:
+ *               sucesso: false
+ *               erro: O 2FA ja esta ativo. Desative antes de gerar um novo QR Code
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
+ *     tags:
+ *       - usuário
+ */
+
 router.post('/otp',
     passport.authenticate('jwt', { session: false }),
     async (req, res) => {
         const usuario = req.user;
 
         try {
+            if (usuario.otpAtivo) {
+                return res.status(422).json({
+                    sucesso: false,
+                    erro: 'O 2FA ja esta ativo. Desative antes de gerar um novo QR Code',
+                });
+            }
+
             const { segredo, qrcode } = geraSegredo(usuario.email);
 
-            usuario.segredoOtp = segredo;
-            await usuario.save();
+            // o segredo fica guardado, mas o 2FA so vale depois de confirmar um codigo
+            await Usuario.updateOne(
+                { _id: usuario._id },
+                { $set: { segredoOtp: segredo, otpAtivo: false } },
+            );
 
-            return res.send(qrcode);
+            return res.type('svg').send(qrcode);
         } catch (e) {
             logger.error(`Erro na geração do segredo do TOTP ${e.message}`);
 
             return res.status(500).json({
+                sucesso: false,
+                erro: e.message,
+            });
+        }
+    }
+);
+
+
+/**
+ * @openapi
+ * /v1/usuarios/otp/valida:
+ *   post:
+ *     summary: Ativa o 2FA confirmando um código
+ *     description: >
+ *       Confirma que o aplicativo autenticador foi configurado corretamente e ativa o 2FA.
+ *       A partir daí, o login em POST /v1/auth passa a exigir o campo `otp`.
+ *     security:
+ *       - auth: []
+ *     requestBody:
+ *       description: Código de 6 dígitos mostrado no aplicativo
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/OtpRequest'
+ *     responses:
+ *       200:
+ *         description: 2FA ativado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MensagemResponse'
+ *             example:
+ *               sucesso: true
+ *               mensagem: 2FA ativado com sucesso
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       422:
+ *         description: Código inválido ou QR Code ainda não gerado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Erro'
+ *             examples:
+ *               semSegredo:
+ *                 summary: Nenhum QR Code foi gerado ainda
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Gere o QR Code em POST /v1/usuarios/otp antes de ativar o 2FA
+ *               codigoInvalido:
+ *                 summary: Código errado ou expirado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Codigo OTP invalido
+ *     tags:
+ *       - usuário
+ */
+
+router.post('/otp/valida',
+    passport.authenticate('jwt', { session: false }),
+    async (req, res) => {
+        try {
+            const { token } = req.body;
+
+            // segredoOtp tem `select: false`, entao precisa ser pedido
+            const usuario = await Usuario
+                .findOne({ _id: req.user._id })
+                .select('+segredoOtp');
+
+            if (!usuario.segredoOtp) {
+                throw new Error('Gere o QR Code em POST /v1/usuarios/otp antes de ativar o 2FA');
+            }
+
+            if (!validaOtp(usuario.segredoOtp, token)) {
+                throw new Error('Codigo OTP invalido');
+            }
+
+            await Usuario.updateOne({ _id: usuario._id }, { $set: { otpAtivo: true } });
+
+            return res.json({
+                sucesso: true,
+                mensagem: '2FA ativado com sucesso',
+            });
+        } catch (e) {
+            logger.error(`Erro na ativacao do 2FA: ${e.message}`);
+
+            return res.status(422).json({
+                sucesso: false,
+                erro: e.message,
+            });
+        }
+    }
+);
+
+
+/**
+ * @openapi
+ * /v1/usuarios/otp:
+ *   delete:
+ *     summary: Desativa o 2FA
+ *     description: >
+ *       Desativa o segundo fator e apaga o segredo, confirmando um código do aplicativo.
+ *       Depois disso o login volta a pedir apenas email e senha.
+ *     security:
+ *       - auth: []
+ *     requestBody:
+ *       description: Código de 6 dígitos mostrado no aplicativo
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/OtpRequest'
+ *     responses:
+ *       200:
+ *         description: 2FA desativado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/MensagemResponse'
+ *             example:
+ *               sucesso: true
+ *               mensagem: 2FA desativado com sucesso
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       422:
+ *         description: Código inválido ou 2FA não estava ativo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Erro'
+ *             examples:
+ *               naoAtivo:
+ *                 summary: 2FA não estava ativo
+ *                 value:
+ *                   sucesso: false
+ *                   erro: O 2FA nao esta ativo nessa conta
+ *               codigoInvalido:
+ *                 summary: Código errado ou expirado
+ *                 value:
+ *                   sucesso: false
+ *                   erro: Codigo OTP invalido
+ *     tags:
+ *       - usuário
+ */
+
+router.delete('/otp',
+    passport.authenticate('jwt', { session: false }),
+    async (req, res) => {
+        try {
+            const { token } = req.body;
+
+            const usuario = await Usuario
+                .findOne({ _id: req.user._id })
+                .select('+segredoOtp');
+
+            if (!usuario.otpAtivo) {
+                throw new Error('O 2FA nao esta ativo nessa conta');
+            }
+
+            if (!validaOtp(usuario.segredoOtp, token)) {
+                throw new Error('Codigo OTP invalido');
+            }
+
+            // remove o campo (o indice e unique + sparse e nao aceita varios nulls)
+            await Usuario.updateOne(
+                { _id: usuario._id },
+                { $set: { otpAtivo: false }, $unset: { segredoOtp: 1 } },
+            );
+
+            return res.json({
+                sucesso: true,
+                mensagem: '2FA desativado com sucesso',
+            });
+        } catch (e) {
+            logger.error(`Erro na desativacao do 2FA: ${e.message}`);
+
+            return res.status(422).json({
                 sucesso: false,
                 erro: e.message,
             });

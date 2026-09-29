@@ -96,6 +96,10 @@ const UsuarioSchema = new Schema({
         sparse: true,
         select: false,
     },
+    otpAtivo: {
+        type: Boolean,
+        default: false,
+    },
     depositos: [DepositoSchema],
     saques: [SaqueSchema],
     moedas: [MoedasSchema],
