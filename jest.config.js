@@ -124,7 +124,7 @@ const config = {
   // restoreMocks: false,
 
   // The root directory that Jest should scan for tests and modules within
-  // rootDir: undefined,
+  rootDir: "tests/unit",
 
   // A list of paths to directories that Jest should use to search for files in
   // roots: [
@@ -138,7 +138,7 @@ const config = {
   // setupFiles: [],
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
-  // setupFilesAfterEnv: [],
+  setupFilesAfterEnv: ["./setup.js"],
 
   // The number of seconds after which a test is considered as slow and reported as such in the results.
   // slowTestThreshold: 5,
@@ -176,13 +176,20 @@ const config = {
   // testRunner: "jest-circus/runner",
 
   // A map from regular expressions to paths to transformers
-  // transform: undefined,
+  // a otplib 13 depende do @scure/base e do @noble/hashes, que so existem como ES Module,
+  // e o jest (no Node < 24.9) nao consegue dar require neles. O babel converte esses
+  // pacotes para CommonJS.
+  transform: {
+    "\\.js$": ["babel-jest", {
+      sourceType: "unambiguous",
+      plugins: ["@babel/plugin-transform-modules-commonjs"],
+    }],
+  },
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-  // transformIgnorePatterns: [
-  //   "\\\\node_modules\\\\",
-  //   "\\.pnp\\.[^\\\\]+$"
-  // ],
+  transformIgnorePatterns: [
+    "[\\\\/]node_modules[\\\\/](?!@(scure|noble)[\\\\/])",
+  ],
 
   // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
   // unmockedModulePathPatterns: undefined,

@@ -5,6 +5,8 @@ const CotacaoSchema = require('./cotacao');
 const CorretoraSchema = require('./corretora');
 const RelatorioShema = require('./relatorio');
 const TopClientsSchema = require('./top-clients');
+// o fechamento ja registra o proprio model no mongoose
+const FechamentoDiario = require('./fechamento');
 
 const Usuario = mongoose.model('Usuario', UsuarioSchema);
 const Cotacao = mongoose.model('Cotacao', CotacaoSchema);
@@ -38,4 +40,5 @@ module.exports = {
   Corretora,
   Relatorio,
   TopClients,
+  FechamentoDiario,
 }

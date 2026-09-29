@@ -54,7 +54,7 @@ const router = express.Router();
  *                 summary: Senha com menos de 5 caracteres
  *                 value:
  *                   sucesso: false
- *                   erro: O campo senha de ter no minimo 5 caracteres
+ *                   erro: O campo senha deve ter no minimo 5 caracteres
  *               cpfInvalido:
  *                 summary: CPF inválido
  *                 value:
@@ -140,7 +140,7 @@ router.post('/', async(req, res) => {
  *                 summary: Senha com menos de 5 caracteres
  *                 value:
  *                   sucesso: false
- *                   erro: O campo senha de ter no minimo 5 caracteres
+ *                   erro: O campo senha deve ter no minimo 5 caracteres
  *     tags:
  *       - usuário
  */
@@ -156,7 +156,7 @@ router.put('/senha',
         }
 
         if (senha.length <= 4) {
-            throw new Error('O campo senha de ter no minimo 5 caracteres');
+            throw new Error('O campo senha deve ter no minimo 5 caracteres');
         }
 
         const senhaCriptografada = await bcrypt.hash(senha, 10);
