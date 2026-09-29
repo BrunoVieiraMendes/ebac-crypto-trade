@@ -3,25 +3,31 @@ const { Usuario } = require('../../../models');
 const { validaOtp } = require('../../../services');
 
 const checaOtp = async (req, res, next) => {
-    if (req.isAuthenticated()) {
-        const usuarioId = req.user._id;
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({
+            sucesso: false,
+            erro: 'Para prosseguir faca login',
+        });
+    }
 
-        const usuario = await Usuario.findById(usuarioId).select('segredoOtp');
+    try {
+        // segredoOtp tem `select: false`, entao precisa ser pedido
+        const usuario = await Usuario
+            .findById(req.user._id)
+            .select('+segredoOtp otpAtivo');
         const token = req.get('totp');
 
-        if (usuario.segredoOtp && validaOtp(usuario.segredoOtp, token)) {
-            next();
-        } else {
-            return res.status(401).json({
-                sucesso: false,
-                erro: 'OTP inválido ou não configurado! Essa rota necessita da configuracao e uso do OTP enviado por Headers'
-            });
+        // so vale se o 2FA foi confirmado em /v1/usuarios/otp/valida
+        if (usuario && usuario.otpAtivo && validaOtp(usuario.segredoOtp, token)) {
+            return next();
         }
-    } else {
+
         return res.status(401).json({
-            sucess: false,
-            erro: 'Para prosseguir faca login',
-        })
+            sucesso: false,
+            erro: 'OTP inválido ou não configurado! Essa rota necessita da configuracao e uso do OTP enviado por Headers'
+        });
+    } catch (e) {
+        return next(e);
     }
 };
 

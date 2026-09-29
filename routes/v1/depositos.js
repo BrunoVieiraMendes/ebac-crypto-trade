@@ -2,6 +2,7 @@ const express = require('express');
 
 const { checaSaldo } = require('../../services');
 const { logger } = require('../../utils');
+const { checaOtp } = require('./auth/otp');
 
 const router = express.Router();
 
@@ -41,9 +42,22 @@ router.get('/', (req, res) => {
  * /v1/depositos:
  *   post:
  *     summary: Realiza um depósito em BRL
- *     description: Realiza a solicitação de um novo depósito em BRL adicionando ao saldo do usuário
+ *     description: >
+ *       Realiza a solicitação de um novo depósito em BRL adicionando ao saldo do usuário.
+ *       Rota protegida por 2FA: além do JWT, é obrigatório enviar o header `totp` com o
+ *       código atual do aplicativo autenticador. Usuários sem 2FA ativo (configurado em
+ *       POST /v1/usuarios/otp e confirmado em POST /v1/usuarios/otp/valida) não conseguem depositar.
  *     security:
  *       - auth: []
+ *     parameters:
+ *       - in: header
+ *         name: totp
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9]{6}$'
+ *         description: Código de 6 dígitos do aplicativo autenticador
+ *         example: '123456'
  *     requestBody:
  *       description: Informações necessárias para efetuar o depósito
  *       required: true
@@ -59,7 +73,7 @@ router.get('/', (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/DepositoResponse'
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/NaoAutorizadoOuOtp'
  *       422:
  *         description: Falha na validação ou no processamento do depósito
  *         content:
@@ -82,7 +96,7 @@ router.get('/', (req, res) => {
  */
 
 
-router.post('/', async(req, res) => {
+router.post('/', checaOtp, async(req, res) => {
     const usuario = req.user;
 
     try{
