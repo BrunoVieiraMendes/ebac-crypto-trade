@@ -7,7 +7,8 @@
     "start": "node app.js",
     "dev": "nodemon ./app.js",
     "seed": "node ./seed",
-    "maildev": "maildev"
+    "maildev": "maildev",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -33,6 +34,7 @@
     "winston": "^3.8.1"
   },
   "devDependencies": {
+    "jest": "^30.5.2",
     "maildev": "^3.0.0-rc.2",
     "nodemon": "^2.0.19"
   }
