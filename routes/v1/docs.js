@@ -567,6 +567,31 @@ const responses = {
             },
         },
     },
+    NaoAutorizadoOuOtp: {
+        description: 'JWT ausente/inválido (resposta `text/plain` do passport) ou código do 2FA ausente, errado, expirado ou 2FA não configurado (resposta JSON do `checaOtp`)',
+        content: {
+            'text/plain': {
+                schema: {
+                    type: 'string',
+                    example: 'Unauthorized',
+                },
+            },
+            'application/json': {
+                schema: {
+                    $ref: '#/components/schemas/Erro',
+                },
+                examples: {
+                    otpInvalido: {
+                        summary: 'Header totp ausente, código errado ou 2FA não configurado',
+                        value: {
+                            sucesso: false,
+                            erro: 'OTP inválido ou não configurado! Essa rota necessita da configuracao e uso do OTP enviado por Headers',
+                        },
+                    },
+                },
+            },
+        },
+    },
     ErroInterno: {
         description: 'Erro inesperado no servidor',
         content: {

@@ -41,9 +41,21 @@ router.get('/', (req, res) => {
  * /v1/saques:
  *   post:
  *     summary: Realiza um saque em BRL
- *     description: Realiza a solicitação de um novo saque em BRL debitando do saldo do usuário
+ *     description: >
+ *       Realiza a solicitação de um novo saque em BRL debitando do saldo do usuário.
+ *       Rota protegida por 2FA: além do JWT, é obrigatório enviar o header `totp` com o
+ *       código atual do aplicativo autenticador. Usuários sem 2FA configurado não conseguem sacar.
  *     security:
  *       - auth: []
+ *     parameters:
+ *       - in: header
+ *         name: totp
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9]{6}$'
+ *         description: Código de 6 dígitos do aplicativo autenticador
+ *         example: '123456'
  *     requestBody:
  *       description: Informações necessárias para efetuar o saque
  *       required: true
@@ -59,7 +71,7 @@ router.get('/', (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/SaqueResponse'
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/NaoAutorizadoOuOtp'
  *       422:
  *         description: Falha na regra de negócio ou na validação dos dados
  *         content:
