@@ -2,6 +2,7 @@ const express = require('express');
 
 const { logger } = require('../../utils');
 const { checaSaldo, sacaCrypto } = require('../../services');
+const { checaOtp } = require('./auth/otp');
 
 const router = express.Router();
 
@@ -85,7 +86,7 @@ router.get('/', (req, res) => {
  *       - operações
  */
 
-router.post('/', async(req, res) => {
+router.post('/', checaOtp, async(req, res) => {
     const usuario = req.user;
 
     try{
