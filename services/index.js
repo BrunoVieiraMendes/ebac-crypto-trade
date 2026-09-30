@@ -6,6 +6,8 @@ module.exports = {
     logaUsuario: require('./loga-usuario'),
     checaSaldo: require('./checa-saldo'),
     sacaCrypto: require('./saca-crypto'),
+    sacaReais: require('./saca-reais'),
+    deposita: require('./deposita'),
     geraPnl: require('./gera-pnl'),
     analisaCotacoes: require('./analisa-cotacoes'),
     trocaMoedas: require('./troca-moedas'),

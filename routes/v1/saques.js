@@ -1,7 +1,7 @@
 const express = require('express');
 
 const { logger } = require('../../utils');
-const { checaSaldo, sacaCrypto } = require('../../services');
+const { sacaReais, sacaCrypto } = require('../../services');
 const { checaOtp } = require('./auth/otp');
 
 const router = express.Router();
@@ -90,10 +90,10 @@ router.get('/', (req, res) => {
  *                   sucesso: false
  *                   erro: Voce nao possui saldo em reais para sacar esse dinheiro
  *               valorInvalido:
- *                 summary: Valor abaixo do mínimo permitido
+ *                 summary: Valor não informado, zero, negativo ou em texto
  *                 value:
  *                   sucesso: false
- *                   erro: 'Usuario validation failed: saques.0.valor: Path `valor` (0) is less than minimum allowed value (1).'
+ *                   erro: Voce deve informar um valor maior que zero para sacar
  *     tags:
  *       - operações
  */
@@ -102,27 +102,12 @@ router.post('/', checaOtp, async(req, res) => {
     const usuario = req.user;
 
     try{
-        const valor = req.body.valor;
-        const saldo = await checaSaldo(usuario);
-
-        if (saldo < valor) {
-            throw new Error ('Voce nao possui saldo para sacar esse dinheiro');
-        }
-
-        const saldoEmMoedas = usuario.moedas.find(m => m.codigo === 'BRL');
-        if (!saldoEmMoedas || saldoEmMoedas.quantidade < valor) {
-            throw new Error ('Voce nao possui saldo em reais para sacar esse dinheiro');
-        }
-
-        usuario.saques.push({ valor: valor, data: new Date() });
-        saldoEmMoedas.quantidade -= valor;
-
-        await usuario.save();
+        const { saldo, saques } = await sacaReais(usuario, req.body.valor);
 
         res.json({
             sucesso: true,
-            saldo: saldo - valor,
-            saques: usuario.saques,
+            saldo: saldo,
+            saques: saques,
         })
     } catch (e) {
         logger.error(`Erro no saque: ${e.message}`);

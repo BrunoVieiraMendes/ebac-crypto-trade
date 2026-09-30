@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { checaSaldo } = require('../../services');
+const { checaSaldo, deposita } = require('../../services');
 const { logger } = require('../../utils');
 const { checaOtp } = require('./auth/otp');
 
@@ -86,11 +86,11 @@ router.get('/', (req, res) => {
  *                 value:
  *                   sucesso: false
  *                   erro: 'Usuario validation failed: depositos.0.valor: Path `valor` (50) is less than minimum allowed value (100).'
- *               valorNaoInformado:
- *                 summary: Campo valor não enviado
+ *               valorInvalido:
+ *                 summary: Valor não informado, zero, negativo ou em texto
  *                 value:
  *                   sucesso: false
- *                   erro: 'Usuario validation failed: depositos.0.valor: Path `valor` is required.'
+ *                   erro: Voce deve informar um valor maior que zero para depositar
  *     tags:
  *       - operações
  */
@@ -100,24 +100,12 @@ router.post('/', checaOtp, async(req, res) => {
     const usuario = req.user;
 
     try{
-        const valor = req.body.valor;
-        usuario.depositos.push({ valor: valor, data: new Date(), cancelado: false, });
-        await usuario.save();
-
-        const saldoEmMoedas = usuario.moedas.find(m => m.codigo === 'BRL');
-        if(saldoEmMoedas) {
-            saldoEmMoedas.quantidade += valor; 
-        } else {
-            usuario.moedas.push({ codigo: 'BRL', quantidade: valor});
-        }
-
-        await usuario.save();
+        const { saldo, depositos } = await deposita(usuario, req.body.valor);
 
         res.json({
             sucesso: true,
-            saldo: await checaSaldo(usuario),
-            depositos: usuario.depositos,
-        
+            saldo: saldo,
+            depositos: depositos,
         });
     } catch (e) {
         logger.error(`Erro no deposito: ${e.message}`);
