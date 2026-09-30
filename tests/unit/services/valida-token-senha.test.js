@@ -3,8 +3,6 @@ const jsonWebToken = require('jsonwebtoken');
 const validaTokenSenha = require('../../../services/valida-token-senha');
 const { Usuario } = require('../../../models');
 
-process.env.JWT_SECRET_KEY = 'segredo-de-teste';
-
 const usuarioMock = {
     email: 'test@ebac.com.br',
     senha: 'senha-criptografada',

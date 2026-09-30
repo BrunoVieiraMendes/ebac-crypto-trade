@@ -3,9 +3,6 @@ const nock = require('nock');
 const cotacoesWorker = require('../../../workers/cotacoes');
 const { Cotacao } = require('../../../models');
 
-process.env.COIN_MARKETCAP_URL = 'https://pro-api.coinmarketcap.com';
-process.env.COIN_MARKETCAP_KEY = 'chave-de-teste';
-
 const job = { attemptsMade: 0, opts: { attempts: 3 } };
 
 const respostaCoinMarketCap = {
@@ -14,12 +11,6 @@ const respostaCoinMarketCap = {
         ETH: [{ symbol: 'ETH', quote: { BRL: { price: 18000 } } }],
     },
 };
-
-beforeAll(() => nock.disableNetConnect());
-
-afterEach(() => nock.cleanAll());
-
-afterAll(() => nock.enableNetConnect());
 
 describe('se a CoinMarketCap responder com sucesso', () => {
     test('ele salva as cotações no banco e finaliza o job', async () => {

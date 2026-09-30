@@ -1,21 +1,12 @@
 const jsonWebToken = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-// o transporter e criado quando o modulo carrega, entao o mock precisa vir antes
-jest.mock('nodemailer', () => {
-    const sendMail = jest.fn().mockResolvedValue({});
-    return { createTransport: jest.fn(() => ({ sendMail })) };
-});
-
 const {
     enviaEmailDeConfirmacao,
     enviaEmailDeRecuperacao,
     enviaEmailDeParabenizacao,
 } = require('../../../services/envia-email');
 const { Usuario } = require('../../../models');
-
-process.env.JWT_SECRET_KEY = 'segredo-de-teste';
-process.env.URL_DA_CRYPTOTRADE = 'http://localhost:3000';
 
 const sendMail = nodemailer.createTransport().sendMail;
 

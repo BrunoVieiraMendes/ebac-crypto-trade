@@ -5,8 +5,6 @@ const { generateSecret, generateSync } = require('otplib');
 const logaUsuario = require('../../../services/loga-usuario');
 const { Usuario } = require('../../../models');
 
-process.env.JWT_SECRET_KEY = 'segredo-de-teste';
-
 const usuarioMock = {
     email: 'test@ebac.com.br',
     senha: 'teste@1234',

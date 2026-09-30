@@ -3,12 +3,6 @@ const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const { generateSecret, generateSync } = require('otplib');
 
-// nao queremos mandar e-mail de verdade nos testes
-jest.mock('nodemailer', () => {
-    const sendMail = jest.fn().mockResolvedValue({});
-    return { createTransport: jest.fn(() => ({ sendMail })) };
-});
-
 const app = require('../../../app');
 const { Usuario } = require('../../../models');
 const { checaAutenticacao } = require('./shared/autenticacao');

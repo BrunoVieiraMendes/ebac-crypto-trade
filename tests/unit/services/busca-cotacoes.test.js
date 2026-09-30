@@ -3,9 +3,6 @@ const nock = require('nock');
 const { buscaCotacoesOnline, buscaCotacoesNoBanco, buscaCotacoesPorData } = require('../../../services/busca-cotacoes');
 const { Cotacao } = require('../../../models');
 
-process.env.COIN_MARKETCAP_URL = 'https://pro-api.coinmarketcap.com';
-process.env.COIN_MARKETCAP_KEY = 'chave-de-teste';
-
 // formato devolvido pela CoinMarketCap: cada simbolo aponta para uma lista de moedas
 const respostaCoinMarketCap = {
     data: {
@@ -14,13 +11,8 @@ const respostaCoinMarketCap = {
     },
 };
 
+// a rede fica bloqueada nos testes (tests/mocks/externos.js): a CoinMarketCap e simulada pelo nock
 describe('buscaCotacoesOnline', () => {
-    beforeAll(() => nock.disableNetConnect());
-
-    afterEach(() => nock.cleanAll());
-
-    afterAll(() => nock.enableNetConnect());
-
     describe('se a CoinMarketCap responder com sucesso', () => {
         test('ele chama a API com as moedas, o BRL e a chave', async () => {
             const escopo = nock(process.env.COIN_MARKETCAP_URL, {
