@@ -3,6 +3,7 @@ const { Relatorio } = require('../models');
 const geraPnl = async(usuario) => {
     const ontem = new Date();
     ontem.setDate(ontem.getDate() - 1);
+    ontem.setUTCHours(0, 0, 0, 0);
 
     const relatorios = await Relatorio.aggregate([
         {
