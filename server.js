@@ -6,12 +6,22 @@ const { logger } = require('./utils');
 const { connect } = require('./models');
 const { agendaTarefas } = require('./workers');
 
-// inicializa tarefas
-agendaTarefas();
+// o Render (e outros provedores) informa a porta pela variavel PORT
+const porta = process.env.PORT || 3000;
 
-const porta = 3000;
-app.listen(porta, () => {
-  connect();
+const inicia = async () => {
+  // conecta no banco antes de tudo: as filas e as rotas dependem dele
+  await connect();
+  logger.info('Conectado ao MongoDB');
 
-  logger.info(`Servidor ouvindo na porta ${porta}`);
+  await agendaTarefas();
+
+  app.listen(porta, () => {
+    logger.info(`Servidor ouvindo na porta ${porta}`);
+  });
+};
+
+inicia().catch((e) => {
+  logger.error(`Erro ao iniciar o servidor: ${e.message}`);
+  process.exit(1);
 });
