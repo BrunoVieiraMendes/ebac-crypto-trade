@@ -12,13 +12,16 @@ const aumentaSaldoQueue = new Queue('aumenta-saldo', process.env.REDIS_URL);
 const relatoriosQueue = new Queue('relatorios', process.env.REDIS_URL);
 const parabenizacaoQueue = new Queue('parabenizacao', process.env.REDIS_URL);
 
-cotacoesQueue.process(cotacoesWorker);
-fechamentoQueue.process(fechamentoWorker);
-aumentaSaldoQueue.process(saldoWorker);
-relatoriosQueue.process(relatoriosWorker);
-parabenizacaoQueue.process(parabenizacaoWorker);
-
 const agendaTarefas = async () => {
+    // os workers so comecam a consumir as filas aqui (depois do banco conectado).
+    // Registrar no carregamento do arquivo fazia os jobs que ja estavam agendados
+    // no Redis rodarem antes da conexao com o MongoDB.
+    cotacoesQueue.process(cotacoesWorker);
+    fechamentoQueue.process(fechamentoWorker);
+    aumentaSaldoQueue.process(saldoWorker);
+    relatoriosQueue.process(relatoriosWorker);
+    parabenizacaoQueue.process(parabenizacaoWorker);
+
     const cotacoesAgendadas = await cotacoesQueue.getRepeatableJobs();
     for (const jobDeBusca of cotacoesAgendadas) {
         await cotacoesQueue.removeRepeatableByKey(jobDeBusca.key);
