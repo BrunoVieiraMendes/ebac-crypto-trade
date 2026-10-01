@@ -9,6 +9,22 @@ const jsonWebToken = require('jsonwebtoken');
 const { Usuario } = require('../models');
 const { ehUrlDeRedirecionamentoValida } = require('../utils');
 
+const emailDe = process.env.EMAIL_DE || 'noreply@cryptotrade.com.br';
+
+const opcoes = {
+    host: process.env.EMAIL_HOST,
+    port: parseInt(process.env.EMAIL_PORT),
+    secure: false,
+};
+
+if (process.env.EMAIL_PASSWORD) {
+    opcoes.auth = {
+        user: 'apikey',
+        pass: process.env.EMAIL_PASSWORD,
+    }
+}
+
+
 // caminhos absolutos dos templates, para nao depender de onde o node foi iniciado
 const templatesDeConfirmacao = path.join(__dirname, '..', 'emails', 'confirmacao');
 const templatesDeRecuperacao = path.join(__dirname, '..', 'emails', 'recuperacao-de-senha');
@@ -32,7 +48,7 @@ const enviaEmailDeConfirmacao = async (usuario, urlDeRedirecionamento) => {
     };
 
     await transporter.sendMail({
-        from: '"CryptoTrade" <noreply@cryptotrade.com.br>',
+        from: `"CryptoTrade" <${emailDe}>`,
         to: usuario.email,
         subject: 'Confirme a sua conta!',
         text: await ejs.renderFile(path.join(templatesDeConfirmacao, 'template.txt'), parametros),
@@ -79,7 +95,7 @@ const enviaEmailDeRecuperacao = async (email, urlDeRedirecionamento) => {
     };
 
     await transporter.sendMail({
-        from: '"CryptoTrade" <noreply@cryptotrade.com.br>',
+        from: `"CryptoTrade" <${emailDe}>`,
         to: usuario.email,
         subject: 'Pedido de recuperação de senha!',
         text: await ejs.renderFile(path.join(templatesDeRecuperacao, 'template.txt'), parametros),
